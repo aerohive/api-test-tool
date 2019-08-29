@@ -119,7 +119,7 @@ angular.module('Check').controller("EndpointCtrl", function ($scope, $mdDialog, 
                     name: "configuration/webhooks/eventTypes",
                     method: "GET",
                     endpoint: "/beta/configuration/webhooks/eventTypes{?ownerId}",
-                    description: "rovides a list of all supported Event Types available for subscription.",
+                    description: "Provides a list of all supported Event Types available for subscription.",
                     status: 0,
                     request: null,
                     body: {},
@@ -372,44 +372,44 @@ angular.module('Check').controller("EndpointCtrl", function ($scope, $mdDialog, 
         else if (endpoint.apMacs && !apMacs) return "apMacs";
         else if (endpoint.eventType && !eventType) return "eventType";
         else return false;
-    }
+    };
 
     $scope.apiCallSuccess = function (apiCall) {
         var done = 0;
         apiCall.endpoints.forEach(function (endpoint) {
             if (endpoint.response) done++;
-        })
+        });
         return done;
-    }
+    };
     $scope.apiCallError = function (apiCall) {
         var error = 0;
         apiCall.endpoints.forEach(function (endpoint) {
             if (endpoint.error) error++;
-        })
+        });
         return error;
-    }
+    };
     $scope.apiCallFinished = function (apiCall) {
         var finished = 0;
         apiCall.endpoints.forEach(function (endpoint) {
             if (endpoint.loaded) finished++;
-        })
+        });
         return finished;
-    }
+    };
 
     $scope.testApiCall = function (apiCall) {
         apiCall.endpoints.forEach(function (endpoint) {
             if (!$scope.waitingForOtherCalls(endpoint)) $scope.generateRequest(endpoint, true);
-        })
-    }
+        });
+    };
 
     $scope.testAllCategories = function () {
         initialized = true;
         for (var apiCall in $scope.apiCalls) {
             $scope.apiCalls[apiCall].endpoints.forEach(function (endpoint) {
                 if (!$scope.waitingForOtherCalls(endpoint)) $scope.generateRequest(endpoint, true);
-            })
+            });
         }
-    }
+    };
 
     $scope.generateRequest = function (endpoint, recursive) {
         if (requests[endpoint.name]) requests[endpoint.name].abort();
@@ -438,7 +438,7 @@ angular.module('Check').controller("EndpointCtrl", function ($scope, $mdDialog, 
                 else if (endpoint.action == "eventType") setEventType(endpoint.status, endpoint.response, recursive);
             }
         });
-    }
+    };
 
 
     function setLocationId(status, response, recursive) {
@@ -448,7 +448,7 @@ angular.module('Check').controller("EndpointCtrl", function ($scope, $mdDialog, 
                 for (var apiCall in $scope.apiCalls) {
                     $scope.apiCalls[apiCall].endpoints.forEach(function (endpoint) {
                         if (endpoint.locationId == true && endpoint.started == false) $scope.generateRequest(endpoint);
-                    })
+                    });
                 }
         }
     }
@@ -465,7 +465,7 @@ angular.module('Check').controller("EndpointCtrl", function ($scope, $mdDialog, 
                 for (var apiCall in $scope.apiCalls) {
                     $scope.apiCalls[apiCall].endpoints.forEach(function (endpoint) {
                         if (endpoint.deviceId == true && endpoint.started == false) $scope.generateRequest(endpoint);
-                    })
+                    });
                 }
         }
     }
@@ -476,7 +476,7 @@ angular.module('Check').controller("EndpointCtrl", function ($scope, $mdDialog, 
                 for (var apiCall in $scope.apiCalls) {
                     $scope.apiCalls[apiCall].endpoints.forEach(function (endpoint) {
                         if (endpoint.clientId == true && endpoint.started == false) $scope.generateRequest(endpoint);
-                    })
+                    });
                 }
         }
     }
@@ -492,7 +492,7 @@ angular.module('Check').controller("EndpointCtrl", function ($scope, $mdDialog, 
                 for (var apiCall in $scope.apiCalls) {
                     $scope.apiCalls[apiCall].endpoints.forEach(function (endpoint) {
                         if (endpoint.ssidProfileId == true && endpoint.started == false) $scope.generateRequest(endpoint);
-                    })
+                    });
                 }
         }
     }
@@ -503,7 +503,7 @@ angular.module('Check').controller("EndpointCtrl", function ($scope, $mdDialog, 
                 for (var apiCall in $scope.apiCalls) {
                     $scope.apiCalls[apiCall].endpoints.forEach(function (endpoint) {
                         if (endpoint.apMacs == true && endpoint.started == false) $scope.generateRequest(endpoint);
-                    })
+                    });
                 }
         }
     }
@@ -514,7 +514,7 @@ angular.module('Check').controller("EndpointCtrl", function ($scope, $mdDialog, 
                 for (var apiCall in $scope.apiCalls) {
                     $scope.apiCalls[apiCall].endpoints.forEach(function (endpoint) {
                         if (endpoint.eventType == true && endpoint.started == false) $scope.generateRequest(endpoint);
-                    })
+                    });
                 }
         }
     }
@@ -536,6 +536,7 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
 
     // Registered webhooks    
     $scope.requestCurrentWebhook = undefined;
+    $scope.webhookVersion = "v1";
     $scope.selectedCurrentWebhooks = [];
     $scope.currentWebhooks = undefined;
     $scope.query = {
@@ -547,19 +548,21 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
     //retrieve the list of registered webhooks
     $scope.getCurrentWebhooks = function () {
         if ($scope.requestCurrentWebhook) $scope.requestCurrentWebhook.abort();
-        $scope.requestCurrentWebhook = webhookService.getCurrent();
+        $scope.requestCurrentWebhook = webhookService.getCurrent($scope.webhookVersion);
         $scope.requestCurrentWebhook.then(function (promise) {
-            if (promise && promise.error) apiWarning(promise.error);
+
+            if (promise && promise.error) $rootScope.$broadcast("apiError", promise.error);
+            else if (promise.status > 300) $rootScope.$broadcast("apiError", promise.data.error);
             else {
                 $scope.currentWebhooks = promise.data.response;
                 $scope.webhook.test = undefined;
                 $scope.currentWebhooks.forEach(function (webhook) {
-                    if (webhook.application == "ApiTestTool"
-                        && webhook.ownerId == $rootScope.xapi.ownerId
-                        && webhook.secret == $rootScope.xapi.vpcUrl + $rootScope.xapi.ownerId
-                        && webhook.url == $location.protocol() + "://" + $location.host() + "/webhook/presence")
+                    if (webhook.application == "ApiTestTool" && 
+                        webhook.ownerId == $rootScope.xapi.ownerId && 
+                        webhook.secret == $rootScope.xapi.vpcUrl + $rootScope.xapi.ownerId && 
+                        webhook.url == $location.protocol() + "://" + $location.host() + "/webhook/presence")
                         $scope.webhook.test = webhook;
-                })
+                });
             }
         });
     };
@@ -567,14 +570,14 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
     // remove one or many webhook registrations
     $scope.deleteCurrentWebhooks = function () {
         $scope.selectedCurrentWebhooks.forEach(function (toDelete) {
-            var request = webhookService.deleteWebhook(toDelete);
+            var request = webhookService.deleteWebhook(toDelete, $scope.webhookVersion);
             request.then(function (promise) {
                 if (promise) {
-                    $scope.getCurrentWebhooks();
+                    $scope.getCurrentWebhooks($scope.webhookVersion);
                 }
             });
-        })
-    }
+        });
+    };
 
     // register new webhook
     $scope.eventTypes = undefined;
@@ -586,60 +589,63 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
         url: "",
         eventType: undefined,
         messageType: undefined
-    }
+    };
 
     // retrieve the webhook eventType list
     function getEventTypes() {
-        var request = endpointService.noId({ name: "configuration/webhooks/eventTypes", method: "GET" })
+        var request = endpointService.noId({ name: "configuration/webhooks/eventTypes", method: "GET" });
         request.then(function (promise) {
-            if (promise && promise.err) alert(promise.err);
+            if (promise && promise.err) $rootScope.$broadcast("apiError", promise.err);
+            else if (promise.status > 300) $rootScope.$broadcast("apiError", promise.data.error);
             else $scope.eventTypes = promise.data.response;
-        })
+        });
     }
 
     // retrieve the webhook messageTypes list each time the eventType value is changing
     $scope.$watch("customWebhook.eventType", function () {
         if ($scope.customWebhook.eventType != undefined) {
-            var request = endpointService.eventType({ name: "configuration/webhooks/messageTypes", method: "GET" }, $scope.customWebhook.eventType)
+            var request = endpointService.eventType({ name: "configuration/webhooks/messageTypes", method: "GET" }, $scope.customWebhook.eventType);
             request.then(function (promise) {
-                if (promise && promise.err) alert(promise.err);
+                if (promise && promise.err) $rootScope.$broadcast("apiError", promise.err);
+                else if (promise.status > 300) $rootScope.$broadcast("apiError", promise.data.error);
                 else $scope.messageTypes = promise.data.response;
-            })
+            });
         }
-    })
+    });
 
     // validate the form values
     $scope.validateWebhook = function () {
         if ($scope.customWebhook.application == "") return false;
         else if ($scope.customWebhook.secret == "") return false;
         else if ($scope.customWebhook.url == "") return false;
-        else if ($scope.customWebhook.eventType == undefined) return false;
-        else if ($scope.customWebhook.messageType == undefined || $scope.customWebhook.messageType == "Please select an \"Event Type\" first.") return false;
+        //else if ($scope.customWebhook.eventType == undefined) return false;
+        //else if ($scope.customWebhook.messageType == undefined || $scope.customWebhook.messageType == "Please select an \"Event Type\" first.") return false;
         else return true;
-    }
+    };
 
     // register a new webhook endpoint
     $scope.saveCustomWebhook = function () {
-        var request = webhookService.createWebhook($scope.customWebhook);
+        var request = webhookService.createWebhook($scope.customWebhook, $scope.webhookVersion);
         request.then(function (promise) {
             if (promise && promise.err) alert(err);
             else {
                 alert("done");
-                $scope.getCurrentWebhooks();
+                $scope.getCurrentWebhooks($scope.webhookVersion);
                 $scope.customWebhook = {
                     application: "",
                     secret : "",
                     url : "",
                     eventType : undefined,
                     messageType : undefined,
-                }
+                };
             }
-        })
-    }
+        });
+    };
 
     // ENTRY Point
-    if ($scope.currentWebhooks == undefined) $scope.getCurrentWebhooks();
-    if ($scope.eventTypes == undefined) getEventTypes();
+    if ($scope.currentWebhooks == undefined) $scope.getCurrentWebhooks($scope.webhookVersion);
+    // ONLY REQUIRED FOR BETA? 
+    // if ($scope.eventTypes == undefined) getEventTypes();
 
 
     // webhook test
@@ -648,7 +654,7 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
     $scope.webhook = {
         register: {
             name: "Presence - Get Client Time Series",
-            endpoint: "POST /beta/configuration/webhooks",
+            endpoint: "POST /v1/configuration/webhooks",
             description: "Creates a new Webhook subscription",
             status: 0,
             request: null,
@@ -661,7 +667,7 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
         },
         remove: {
             name: "Presence - Get Client Time Series",
-            endpoint: "DELETE /beta/configuration/webhooks/{subscription}",
+            endpoint: "DELETE /v1/configuration/webhooks/{subscription}",
             description: "Deletes a Webhook subscription",
             status: 0,
             request: null,
@@ -677,18 +683,18 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
         socket: false,
         response: [],
         success: null
-    }
+    };
     $scope.displayedResponse = -1;
 
     // change the webhook data to display
     $scope.showResponse = function (index) {
         if ($scope.displayedResponse == index) $scope.displayedResponse = -1;
         else $scope.displayedResponse = index;
-    }
+    };
     // manage the webhook data to display/hide
     $scope.isDisplayed = function (index) {
         return $scope.displayedResponse == index;
-    }
+    };
 
     //start the test
     $scope.startWh = function () {
@@ -717,7 +723,7 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
                 }
             }
         });
-    }
+    };
 
     // stop the test
     $scope.stopWh = function () {
@@ -744,7 +750,7 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
                 if ($scope.webhook.remove.status == 200) $scope.webhook.started = false;
             }
         });
-    }
+    };
 
     // manage the modal to display the webhook endpoints details
     $scope.showDetails = function (endpoint) {
@@ -758,6 +764,9 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
     };
 
     // 
+    $scope.$watch("webhookVersion", function(){
+        $scope.getCurrentWebhooks();
+    });
     $scope.$watch("webhook.test", function (newValue, oldValue) {
         if ($scope.webhook.test == undefined && $scope.webhook.socket == true) {
             $scope.webhook.socket = false;
@@ -767,7 +776,7 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
             var wid = $scope.webhook.test.id;
             socketio.emit("webhook", wid);
         }
-    })
+    });
 
     // receive webhook test data
     socketio.on('data', function (obj) {
@@ -782,6 +791,6 @@ angular.module('Check').controller("WebhookCtrl", function ($scope, $rootScope, 
     // update the list of registerd webhooks when someone with the same ownerId starts the test
     socketio.on("update", function (data) {
         $scope.getCurrentWebhooks();
-    })
+    });
 
 });

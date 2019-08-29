@@ -13,11 +13,11 @@ function removeTestWebhook(req) {
         else {
             response.forEach(function (wh) {
                 if (
-                    wh.ownerId == req.session.xapi.ownerId
-                    && wh.url == "https://" + serverHostname + "/webhook/presence"
+                    wh.ownerId == req.session.xapi.ownerId && 
+                    wh.url == "https://" + serverHostname + "/webhook/presence"
                 ) whToRemove = true;
             });
-            if (whToRemove) API.configuration.webhooks.remove(
+            if (whToRemove && wh.id) API.configuration.webhooks.remove(
                 req.session.xapi,
                 devAccount,
                 wh.id,
@@ -27,13 +27,13 @@ function removeTestWebhook(req) {
                         console.log("==========");
                         console.info("\x1b[33mwarn\x1b[0m:", "Webhook " + wh.id + " removed for account " + req.session.xapi.ownerId);
                     }
-                })
+                });
             else {
                 console.log("==========");
                 console.info("\x1b[33mwarn\x1b[0m:", "There is no Webhook to remove for account " + req.session.xapi.ownerId);
             }
         }
-    })
+    });
 }
 
 /*================================================================
